@@ -1,15 +1,19 @@
+import pg from 'pg';
+const {Pool} = pg;
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
 
 dotenv.config();
 
-const  pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: parseInt(process.env.DB_PORT)
-})
+const pool = new Pool ( {
+    host:process.env.DB_HOST,
+    database:process.env.DB_NAME || 'chatapp_db',
+    user:process.env.DB_USER || 'chatuser',
+    password:process.env.DB_PASSWORD || 'newpass',
+    port: parseInt(process.env.DB_PORT) 
+});
+
+export default pool;
+
 
 // Test connection
 const testConnection = async () => {
