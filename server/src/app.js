@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth.js';
-import messageRoutes from './routes/message.js';
+import authRoutes from './routes/auth.route.js';
+import messageRoutes from './routes/message.route.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { testConnection } from './config/database.js';
 import path from 'path';

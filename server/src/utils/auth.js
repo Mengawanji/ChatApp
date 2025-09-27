@@ -1,26 +1,26 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-const SALT_ROUNDS = 12;
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+dotenv.config();
 
+export const generateToken = (userId, res) => {
+  const { JWT_SECRET } = ENV;
+  if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured");
+  }
 
-export const hashPassword = async (password) => {
-  return await bcrypt.hash(password, SALT_ROUNDS);
+  const token = jwt.sign({ userId }, JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  res.cookie("jwt", token, {
+    maxAge: 7 * 24 * 60 * 60 * 1000, 
+    httpOnly: true, // prevent XSS attacks: cross-site scripting
+    sameSite: "strict", // CSRF attacks
+    secure: process.env.NODE_ENV === "development" ? false : true,
+  });
+
+  return token;
 };
 
 
-export const comparePassword = async (password, hash) => {
-  return await bcrypt.compare(password, hash);
-};
-
-
-export const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-};
-
-
-export const verifyToken = (token) => {
-  return jwt.verify(token, JWT_SECRET);
-};
