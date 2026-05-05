@@ -10,6 +10,7 @@ function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("Form submitted with:", formData); 
     login(formData);
   };
 
@@ -67,7 +68,7 @@ function LoginPage() {
                     {isLoggingIn ? (
                       <LoaderIcon className="w-full h-5 animate-spin text-center" />
                     ) : (
-                      "Sign In"
+                      "Login"
                     )}
                   </button>
                 </form>
@@ -82,11 +83,10 @@ function LoginPage() {
 
             {/* FORM ILLUSTRATION - RIGHT SIDE */}
             <div className="hidden md:w-1/2 md:flex items-center justify-center p-6 bg-gradient-to-bl from-slate-800/20 to-transparent">
-              <div>
+              <div className="flex flex-col items-center">
                 <img
                   src="/login.png"
-                  alt="People using mobile devices"
-                  className="w-full h-auto object-contain"
+                  className="w-1/6 h-auto object-contain"
                 />
                 <div className="mt-6 text-center">
                   <h3 className="text-xl font-medium text-cyan-400">Connect anytime, anywhere</h3>

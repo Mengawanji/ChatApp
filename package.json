@@ -5,10 +5,14 @@
   "main": "index.js",
   "scripts": {
     "build": "pnpm --dir server install && pnpm --dir client install && pnpm --dir client run build",
-    "start": "pnpm --dir server run start"
+    "start": "pnpm --dir server run start",
+    "dev": "concurrently \"pnpm --dir server dev\" \"pnpm --dir client dev\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.17.1"
+  "packageManager": "pnpm@10.17.1",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }

@@ -1,5 +1,5 @@
 import { sendWelcomeEmail } from "../emails/emailHandlers.js";
-import { generateToken } from "../lib/utils.js";
+import { generateToken } from "../utils/auth.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { ENV } from "../lib/env.js";
@@ -17,52 +17,40 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
-    // check if emailis valid: regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const user = await User.findOne({ email });
-    if (user) return res.status(400).json({ message: "Email already exists" });
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) return res.status(400).json({ message: "Email already exists" });
 
-    // 123456 => $dnjasdkasj_?dmsakmk
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const newUser = await User.create({
       fullName,
       email,
       password: hashedPassword,
     });
 
-    if (newUser) {
-      // before CR:
-      // generateToken(newUser._id, res);
-      // await newUser.save();
+    generateToken(newUser.id, res);
 
-      // after CR:
-      // Persist user first, then issue auth cookie
-      const savedUser = await newUser.save();
-      generateToken(savedUser._id, res);
+    res.status(201).json({
+      id: newUser.id,
+      fullName: newUser.full_name,
+      email: newUser.email,
+      profilePic: newUser.profile_pic,
+    });
 
-      res.status(201).json({
-        _id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        profilePic: newUser.profilePic,
-      });
-
-      try {
-        await sendWelcomeEmail(savedUser.email, savedUser.fullName, ENV.CLIENT_URL);
-      } catch (error) {
-        console.error("Failed to send welcome email:", error);
-      }
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
+    try {
+      await sendWelcomeEmail(newUser.email, newUser.full_name, ENV.CLIENT_URL);
+    } catch (error) {
+      console.error("Failed to send welcome email:", error);
     }
+
   } catch (error) {
-    console.log("Error in signup controller:", error);
+    console.error("Signup FULL error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -75,20 +63,19 @@ export const login = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findByEmail(email);
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
-    // never tell the client which one is incorrect: password or email
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
 
-    generateToken(user._id, res);
+    generateToken(user.id, res);
 
     res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
+      id: user.id,
+      fullName: user.full_name,
       email: user.email,
-      profilePic: user.profilePic,
+      profilePic: user.profile_pic,
     });
   } catch (error) {
     console.error("Error in login controller:", error);
@@ -106,15 +93,13 @@ export const updateProfile = async (req, res) => {
     const { profilePic } = req.body;
     if (!profilePic) return res.status(400).json({ message: "Profile pic is required" });
 
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
+    const updatedUser = await User.update(userId, {
+      profilePic: uploadResponse.secure_url,
+    });
 
     res.status(200).json(updatedUser);
   } catch (error) {

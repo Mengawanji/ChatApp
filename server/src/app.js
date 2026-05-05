@@ -5,6 +5,7 @@ import messageRoutes from './routes/message.route.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { testConnection } from './config/database.js';
 import path from 'path';
+import cors from "cors";
 
 dotenv.config();
 
@@ -24,10 +25,19 @@ const PORT = process.env.PORT || 3000;
  
 // Middleware
 app.use(express.json());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}))
+
+//test route
+app.get("/api/hello", (req, res) =>{
+  res.json({message: "Hello from server"})
+})
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/message', messageRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/message', messageRoutes);
 
 
 // Health check endpoint

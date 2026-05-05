@@ -32,6 +32,7 @@ export const useChatStore = create((set, get) => ({
       set({ isUsersLoading: false });
     }
   },
+
   getMyChatPartners: async () => {
     set({ isUsersLoading: true });
     try {
@@ -63,23 +64,22 @@ export const useChatStore = create((set, get) => ({
     const tempId = `temp-${Date.now()}`;
 
     const optimisticMessage = {
-      _id: tempId,
-      senderId: authUser._id,
-      receiverId: selectedUser._id,
+      id: tempId,
+      senderId: authUser.id,
+      receiverId: selectedUser.id,
       text: messageData.text,
       image: messageData.image,
       createdAt: new Date().toISOString(),
-      isOptimistic: true, // flag to identify optimistic messages (optional)
+      isOptimistic: true,
     };
-    // immidetaly update the ui by adding the message
+
     set({ messages: [...messages, optimisticMessage] });
 
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-      set({ messages: messages.concat(res.data) });
+      const res = await axiosInstance.post(`/messages/send/${selectedUser.id}`, messageData);
+      set({ messages: [...messages, res.data] });
     } catch (error) {
-      // remove optimistic message on failure
-      set({ messages: messages });
+      set({ messages });
       toast.error(error.response?.data?.message || "Something went wrong");
     }
   },
@@ -91,7 +91,7 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
 
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
+      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser.id;
       if (!isMessageSentFromSelectedUser) return;
 
       const currentMessages = get().messages;
@@ -99,8 +99,7 @@ export const useChatStore = create((set, get) => ({
 
       if (isSoundEnabled) {
         const notificationSound = new Audio("/sounds/notification.mp3");
-
-        notificationSound.currentTime = 0; // reset to start
+        notificationSound.currentTime = 0;
         notificationSound.play().catch((e) => console.log("Audio play failed:", e));
       }
     });
